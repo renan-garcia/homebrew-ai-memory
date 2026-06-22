@@ -45,12 +45,22 @@ shasum -a 256 /tmp/ai-memory-macos-x86_64.tar.gz
 From this directory:
 
 ```sh
-brew install ./Formula/ai-memory.rb
-brew test ./Formula/ai-memory.rb
-brew services start ai-memory
+brew tap local/ai-memory "$(pwd)"
+brew install local/ai-memory/ai-memory
+brew test local/ai-memory/ai-memory
+brew services start local/ai-memory/ai-memory
 ai-memory status
 ai-memory install-mcp --client codex --apply
 ai-memory install-hooks --agent codex --apply
+```
+
+Homebrew 6 rejects direct path installs for formulae that are not in a tap. On
+older Homebrew versions, or if path formula installs are enabled again, this is
+the equivalent direct path flow:
+
+```sh
+brew install ./Formula/ai-memory.rb
+brew test ./Formula/ai-memory.rb
 ```
 
 Useful formula checks:
