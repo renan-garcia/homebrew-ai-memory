@@ -1,189 +1,122 @@
 # Homebrew tap for ai-memory
 
-Personal Homebrew tap for installing
-[`akitaonrails/ai-memory`](https://github.com/akitaonrails/ai-memory) from the
-official GitHub release archives.
-
-Before publishing, replace `renan-garcia` in the examples below with your real
-GitHub username. For Homebrew, the repository should be named
-`homebrew-ai-memory`, so:
-
-```text
-brew tap renan-garcia/ai-memory
-```
-
-maps to:
-
-```text
-https://github.com/renan-garcia/homebrew-ai-memory
-```
+Installs [ai-memory](https://github.com/akitaonrails/ai-memory) on macOS from
+the official GitHub release archives.
 
 ## Install
 
 ```sh
 brew tap renan-garcia/ai-memory
 brew install ai-memory
-```
-
-For your GitHub user, that would be:
-
-```sh
-brew tap renan-garcia/ai-memory
-brew install ai-memory
-```
-
-Start the local service:
-
-```sh
 brew services start ai-memory
 ai-memory status
 ```
 
-Install Codex integration:
+The service listens at `http://127.0.0.1:49374` (MCP + web UI).
 
-```sh
-ai-memory install-mcp --client codex --apply
-ai-memory install-hooks --agent codex --apply
-```
+## LLM provider
 
-The service runs:
-
-```sh
-ai-memory serve --transport http --bind 127.0.0.1:49374 --enable-web
-```
-
-with:
+By default, the service uses:
 
 ```text
 AI_MEMORY_LLM_PROVIDER=openai-oauth
 AI_MEMORY_LLM_MODEL=gpt-5.4-mini
 ```
 
-## Formula layout
+With `openai-oauth`, sign in once before use:
 
-The formula is:
-
-```text
-Formula/ai-memory.rb
+```sh
+ai-memory auth login openai-oauth
 ```
 
-It uses fixed versioned release URLs and fixed SHA256 values. It does not use
-`latest/download`.
+### Change the provider
 
-The upstream release artifacts are:
+Homebrew stores these variables in the background service file. To change them:
 
-```text
-ai-memory-macos-aarch64.tar.gz
-ai-memory-macos-x86_64.tar.gz
+```sh
+brew services stop ai-memory
+open -e ~/Library/LaunchAgents/homebrew.mxcl.ai-memory.plist
 ```
 
-## Hooks layout
+In the `EnvironmentVariables` block, update `AI_MEMORY_LLM_PROVIDER` and
+`AI_MEMORY_LLM_MODEL`. If the provider uses an API key, add the matching
+variable in the same block (for example `ANTHROPIC_API_KEY` or
+`OPENAI_API_KEY`).
 
-The official release archive includes `hooks/codex`.
+Then restart:
 
-Homebrew installs the hook bundle under `pkgshare`, for example:
-
-```text
-/opt/homebrew/Cellar/ai-memory/<version>/share/ai-memory/hooks
+```sh
+brew services start ai-memory
 ```
 
-`ai-memory install-hooks` currently auto-discovers a sibling `hooks/` directory
-beside the real binary, then falls back to paths such as
-`/usr/local/share/ai-memory/hooks` and `/usr/share/ai-memory/hooks`. On Apple
-Silicon Homebrew, the prefix is usually `/opt/homebrew`, so that fallback does
-not find `pkgshare`.
+Common values for `AI_MEMORY_LLM_PROVIDER`:
 
-This tap installs the real upstream binary in `libexec` and exposes a wrapper at
-`bin/ai-memory`. Normal commands are delegated unchanged. For:
+| Value | Authentication |
+| --- | --- |
+| `openai-oauth` | `ai-memory auth login openai-oauth` |
+| `anthropic` | `ANTHROPIC_API_KEY` in the plist |
+| `openai` | `OPENAI_API_KEY` in the plist |
+| `anthropic-oauth` | `ANTHROPIC_OAUTH_TOKEN` in the plist |
+| `copilot` | `ai-memory auth login copilot` |
+
+Full provider list and recommended models:
+[docs/install.md](https://github.com/akitaonrails/ai-memory/blob/main/docs/install.md)
+
+> A `brew upgrade ai-memory` may recreate the plist with the tap defaults.
+> Reapply your changes if that happens.
+
+To test without the background service:
+
+```sh
+brew services stop ai-memory
+AI_MEMORY_LLM_PROVIDER=anthropic \
+AI_MEMORY_LLM_MODEL=claude-haiku-4-5 \
+ANTHROPIC_API_KEY=sk-ant-... \
+  ai-memory serve --transport http --bind 127.0.0.1:49374 --enable-web
+```
+
+## Agent hooks
 
 ```sh
 ai-memory install-hooks --agent codex --apply
 ```
 
-the wrapper adds:
+This tap automatically points to the hooks installed by Homebrew.
+
+## Upgrade
 
 ```sh
---hooks-dir <pkgshare>/hooks
+brew update && brew upgrade ai-memory
 ```
 
-unless the user already supplied `--hooks-dir`.
+---
 
-## Automatic updates
+## Tap maintenance
 
-The workflow in `.github/workflows/bump-ai-memory.yml` runs once a day and can
-also be started manually with `workflow_dispatch`.
+For maintainers of this repository.
 
-It:
+### Automatic updates
 
-1. reads the latest release from `akitaonrails/ai-memory`;
-2. downloads `ai-memory-macos-aarch64.tar.gz`;
-3. downloads `ai-memory-macos-x86_64.tar.gz`;
-4. calculates both SHA256 values;
-5. updates `Formula/ai-memory.rb`;
-6. commits directly to the repository default branch if the formula changed.
+The workflow in `.github/workflows/bump-ai-memory.yml` runs once a day (or via
+`workflow_dispatch`), downloads the official release artifacts, recalculates
+SHA256 values, and updates `Formula/ai-memory.rb` on the default branch.
 
-After the workflow commits the new formula, users get the new version through
-normal Homebrew update flow:
+For automatic commits, enable **Settings → Actions → General → Workflow
+permissions → Read and write permissions**.
 
-```sh
-brew update
-brew upgrade ai-memory
-```
-
-or simply:
-
-```sh
-brew update && brew upgrade
-```
-
-For the commit step to work, enable GitHub Actions write permissions in the tap
-repository settings:
-
-```text
-Settings -> Actions -> General -> Workflow permissions -> Read and write
-permissions
-```
-
-## Manual bump
-
-The workflow uses:
-
-```sh
-scripts/bump-formula.sh
-```
-
-You can run it locally when needed:
+### Manual bump
 
 ```sh
 scripts/bump-formula.sh
 git diff -- Formula/ai-memory.rb
 ```
 
-It only updates the formula file. It does not publish, push, install, start
-services, or touch your `ai-memory` data directory.
-
-## Local validation
+### Local validation
 
 ```sh
 brew style ./Formula/ai-memory.rb
-brew audit --strict --new local/ai-memory/ai-memory
-brew test local/ai-memory/ai-memory
-```
-
-Homebrew 6 rejects direct path installs for formulae that are not in a tap. If
-you need to validate locally before publishing, register this checkout as a
-local tap:
-
-```sh
 brew tap local/ai-memory "$(pwd)"
 brew install local/ai-memory/ai-memory
+brew audit --strict local/ai-memory/ai-memory
 brew test local/ai-memory/ai-memory
-```
-
-On older Homebrew versions that still accept path formulae, this equivalent
-direct-path flow may work:
-
-```sh
-brew install ./Formula/ai-memory.rb
-brew test ./Formula/ai-memory.rb
 ```
