@@ -4,24 +4,24 @@ Personal Homebrew tap for installing
 [`akitaonrails/ai-memory`](https://github.com/akitaonrails/ai-memory) from the
 official GitHub release archives.
 
-Before publishing, replace `MEU_USUARIO` in the examples below with your real
+Before publishing, replace `renan-garcia` in the examples below with your real
 GitHub username. For Homebrew, the repository should be named
 `homebrew-ai-memory`, so:
 
 ```text
-brew tap MEU_USUARIO/ai-memory
+brew tap renan-garcia/ai-memory
 ```
 
 maps to:
 
 ```text
-https://github.com/MEU_USUARIO/homebrew-ai-memory
+https://github.com/renan-garcia/homebrew-ai-memory
 ```
 
 ## Install
 
 ```sh
-brew tap MEU_USUARIO/ai-memory
+brew tap renan-garcia/ai-memory
 brew install ai-memory
 ```
 
@@ -120,10 +120,10 @@ It:
 3. downloads `ai-memory-macos-x86_64.tar.gz`;
 4. calculates both SHA256 values;
 5. updates `Formula/ai-memory.rb`;
-6. opens a pull request in this tap if the formula changed.
+6. commits directly to the repository default branch if the formula changed.
 
-After that PR is reviewed and merged, users get the new formula through normal
-Homebrew update flow:
+After the workflow commits the new formula, users get the new version through
+normal Homebrew update flow:
 
 ```sh
 brew update
@@ -136,16 +136,13 @@ or simply:
 brew update && brew upgrade
 ```
 
-For the pull request step to work, enable GitHub Actions write permissions in
-the tap repository settings:
+For the commit step to work, enable GitHub Actions write permissions in the tap
+repository settings:
 
 ```text
 Settings -> Actions -> General -> Workflow permissions -> Read and write
 permissions
 ```
-
-If GitHub shows a separate option to allow Actions to create pull requests,
-enable that too.
 
 ## Manual bump
 
