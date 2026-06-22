@@ -4,6 +4,11 @@ class AiMemory < Formula
   version "1.1.3"
   license "MIT"
 
+  livecheck do
+    url :stable
+    strategy :github_latest
+  end
+
   on_macos do
     if Hardware::CPU.arm?
       url "https://github.com/akitaonrails/ai-memory/releases/download/v1.1.3/ai-memory-macos-aarch64.tar.gz"

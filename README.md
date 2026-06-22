@@ -1,96 +1,100 @@
-# Local Homebrew tap for ai-memory
+# Homebrew tap for ai-memory
 
-This repository is a local Homebrew tap used to test installing
+Personal Homebrew tap for installing
 [`akitaonrails/ai-memory`](https://github.com/akitaonrails/ai-memory) from the
-official GitHub release archives. It does not publish a tap and does not modify
-`homebrew-core`.
+official GitHub release archives.
 
-## Formula
-
-The formula lives at:
-
-```sh
-Formula/ai-memory.rb
-```
-
-It currently targets `ai-memory` version `1.1.3`.
-
-Release artifacts:
+Before publishing, replace `MEU_USUARIO` in the examples below with your real
+GitHub username. For Homebrew, the repository should be named
+`homebrew-ai-memory`, so:
 
 ```text
-macOS Apple Silicon:
-https://github.com/akitaonrails/ai-memory/releases/download/v1.1.3/ai-memory-macos-aarch64.tar.gz
-sha256: 814c1fa1609a17309585a0c56e9938f56e20c3078c2a3738b9e4d882c57ad8a3
-
-macOS Intel:
-https://github.com/akitaonrails/ai-memory/releases/download/v1.1.3/ai-memory-macos-x86_64.tar.gz
-sha256: 85c6cd362e394370e19caca860e91fd768a10bfc6f5af6afaf1cbd819e81828d
+brew tap MEU_USUARIO/ai-memory
 ```
 
-To recalculate checksums manually:
+maps to:
 
-```sh
-curl -L --fail --output /tmp/ai-memory-macos-aarch64.tar.gz \
-  https://github.com/akitaonrails/ai-memory/releases/download/v1.1.3/ai-memory-macos-aarch64.tar.gz
-
-curl -L --fail --output /tmp/ai-memory-macos-x86_64.tar.gz \
-  https://github.com/akitaonrails/ai-memory/releases/download/v1.1.3/ai-memory-macos-x86_64.tar.gz
-
-shasum -a 256 /tmp/ai-memory-macos-aarch64.tar.gz
-shasum -a 256 /tmp/ai-memory-macos-x86_64.tar.gz
+```text
+https://github.com/MEU_USUARIO/homebrew-ai-memory
 ```
 
-## Local test commands
-
-From this directory:
+## Install
 
 ```sh
-brew tap local/ai-memory "$(pwd)"
-brew install local/ai-memory/ai-memory
-brew test local/ai-memory/ai-memory
-brew services start local/ai-memory/ai-memory
+brew tap MEU_USUARIO/ai-memory
+brew install ai-memory
+```
+
+For your GitHub user, that would be:
+
+```sh
+brew tap renan-garcia/ai-memory
+brew install ai-memory
+```
+
+Start the local service:
+
+```sh
+brew services start ai-memory
 ai-memory status
+```
+
+Install Codex integration:
+
+```sh
 ai-memory install-mcp --client codex --apply
 ai-memory install-hooks --agent codex --apply
 ```
 
-Homebrew 6 rejects direct path installs for formulae that are not in a tap. On
-older Homebrew versions, or if path formula installs are enabled again, this is
-the equivalent direct path flow:
+The service runs:
 
 ```sh
-brew install ./Formula/ai-memory.rb
-brew test ./Formula/ai-memory.rb
+ai-memory serve --transport http --bind 127.0.0.1:49374 --enable-web
 ```
 
-Useful formula checks:
+with:
 
-```sh
-brew style ./Formula/ai-memory.rb
-brew audit --strict --new ./Formula/ai-memory.rb
+```text
+AI_MEMORY_LLM_PROVIDER=openai-oauth
+AI_MEMORY_LLM_MODEL=gpt-5.4-mini
+```
+
+## Formula layout
+
+The formula is:
+
+```text
+Formula/ai-memory.rb
+```
+
+It uses fixed versioned release URLs and fixed SHA256 values. It does not use
+`latest/download`.
+
+The upstream release artifacts are:
+
+```text
+ai-memory-macos-aarch64.tar.gz
+ai-memory-macos-x86_64.tar.gz
 ```
 
 ## Hooks layout
 
-The official release archive includes a `hooks/` directory, including
-`hooks/codex`.
+The official release archive includes `hooks/codex`.
 
-Homebrew installs those hook sources under `pkgshare`, which resolves to a path
-like:
+Homebrew installs the hook bundle under `pkgshare`, for example:
 
 ```text
-/opt/homebrew/Cellar/ai-memory/1.1.3/share/ai-memory/hooks
+/opt/homebrew/Cellar/ai-memory/<version>/share/ai-memory/hooks
 ```
 
 `ai-memory install-hooks` currently auto-discovers a sibling `hooks/` directory
 beside the real binary, then falls back to paths such as
 `/usr/local/share/ai-memory/hooks` and `/usr/share/ai-memory/hooks`. On Apple
-Silicon Homebrew, the prefix is usually `/opt/homebrew`, so the fallback does
+Silicon Homebrew, the prefix is usually `/opt/homebrew`, so that fallback does
 not find `pkgshare`.
 
-The local formula avoids that by installing the real binary in `libexec` and a
-small wrapper at `bin/ai-memory`. For normal commands the wrapper delegates
-unchanged. For:
+This tap installs the real upstream binary in `libexec` and exposes a wrapper at
+`bin/ai-memory`. Normal commands are delegated unchanged. For:
 
 ```sh
 ai-memory install-hooks --agent codex --apply
@@ -104,16 +108,85 @@ the wrapper adds:
 
 unless the user already supplied `--hooks-dir`.
 
-## Upstream suggestion
+## Automatic updates
 
-A clean upstream improvement would be for `ai-memory install-hooks` to also look
-for Homebrew-style hook roots, for example:
+The workflow in `.github/workflows/bump-ai-memory.yml` runs once a day and can
+also be started manually with `workflow_dispatch`.
 
-```text
-<resolved executable prefix>/../share/ai-memory/hooks
-HOMEBREW_PREFIX/opt/ai-memory/share/ai-memory/hooks
-HOMEBREW_PREFIX/share/ai-memory/hooks
+It:
+
+1. reads the latest release from `akitaonrails/ai-memory`;
+2. downloads `ai-memory-macos-aarch64.tar.gz`;
+3. downloads `ai-memory-macos-x86_64.tar.gz`;
+4. calculates both SHA256 values;
+5. updates `Formula/ai-memory.rb`;
+6. opens a pull request in this tap if the formula changed.
+
+After that PR is reviewed and merged, users get the new formula through normal
+Homebrew update flow:
+
+```sh
+brew update
+brew upgrade ai-memory
 ```
 
-That would let a Homebrew formula install the binary directly to `bin` without a
-wrapper while keeping hooks in `pkgshare`.
+or simply:
+
+```sh
+brew update && brew upgrade
+```
+
+For the pull request step to work, enable GitHub Actions write permissions in
+the tap repository settings:
+
+```text
+Settings -> Actions -> General -> Workflow permissions -> Read and write
+permissions
+```
+
+If GitHub shows a separate option to allow Actions to create pull requests,
+enable that too.
+
+## Manual bump
+
+The workflow uses:
+
+```sh
+scripts/bump-formula.sh
+```
+
+You can run it locally when needed:
+
+```sh
+scripts/bump-formula.sh
+git diff -- Formula/ai-memory.rb
+```
+
+It only updates the formula file. It does not publish, push, install, start
+services, or touch your `ai-memory` data directory.
+
+## Local validation
+
+```sh
+brew style ./Formula/ai-memory.rb
+brew audit --strict --new local/ai-memory/ai-memory
+brew test local/ai-memory/ai-memory
+```
+
+Homebrew 6 rejects direct path installs for formulae that are not in a tap. If
+you need to validate locally before publishing, register this checkout as a
+local tap:
+
+```sh
+brew tap local/ai-memory "$(pwd)"
+brew install local/ai-memory/ai-memory
+brew test local/ai-memory/ai-memory
+```
+
+On older Homebrew versions that still accept path formulae, this equivalent
+direct-path flow may work:
+
+```sh
+brew install ./Formula/ai-memory.rb
+brew test ./Formula/ai-memory.rb
+```
