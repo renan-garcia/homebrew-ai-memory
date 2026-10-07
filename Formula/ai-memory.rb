@@ -1,7 +1,7 @@
 class AiMemory < Formula
   desc "Persistent memory server and lifecycle hooks for AI coding agents"
   homepage "https://github.com/akitaonrails/ai-memory"
-  version "2.5.2"
+  version "2.6.0"
   license "MIT"
 
   livecheck do
@@ -11,11 +11,11 @@ class AiMemory < Formula
 
   on_macos do
     if Hardware::CPU.arm?
-      url "https://github.com/akitaonrails/ai-memory/releases/download/v2.5.2/ai-memory-macos-aarch64.tar.gz"
-      sha256 "160881fab2be3d2e9cf64f656da517c961c1e14ff4987d75a70ee1c71e17e9ef"
+      url "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.0/ai-memory-macos-aarch64.tar.gz"
+      sha256 "3c23c80b07f7cba0045f13e50e92c98a53fb5f741b50560a67ce3b9739e1bff9"
     elsif Hardware::CPU.intel?
-      url "https://github.com/akitaonrails/ai-memory/releases/download/v2.5.2/ai-memory-macos-x86_64.tar.gz"
-      sha256 "35fe9b036707c587cfe75e21bbe4a49b00eac2018a047352970fd53d787e9c4a"
+      url "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.0/ai-memory-macos-x86_64.tar.gz"
+      sha256 "7523b656739ac75989e7a15ac05523fc15112bc915f83cff96e3da90e7c73b5e"
     end
   end
 
